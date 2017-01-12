@@ -1,0 +1,18 @@
+apply plugin: 'scala'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile 'org.scala-lang:scala-library:2.11.7'
+
+    // We use Scalatest for testing our library
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.scalatest:scalatest_2.11:2.2.5'
+    testRuntime 'org.scala-lang.modules:scala-xml_2.11:1.0.5'
+
+    compile group: 'org.scalikejdbc', name: 'scalikejdbc_2.11', version: '2.2.4'
+    compile group: 'com.h2database', name: 'h2', version: '1.4.193'
+    compile group: 'com.newrelic.agent.java', name: 'newrelic-api', version: '3.34.0'
+}
