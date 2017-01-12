@@ -9,10 +9,10 @@ import scala.util.Random
 object Library {
 
   def main(args: Array[String]): Unit = {
-    Class.forName("org.h2.Driver")
-    createDb()
-    insertManyRows()
     ConnectionPool.singleton("jdbc:h2:./books", "sa", "")
+
+    createDb()
+    insertManyRows(100000)
 
 
     while (true) {
@@ -24,38 +24,39 @@ object Library {
   }
 
   def createDb(): Unit = {
-    val connection = DriverManager.getConnection("jdbc:h2:./books", "sa", "")
-    val statement = connection.createStatement()
-    statement.execute("create TABLE IF NOT EXISTS books ( title varchar(255), author varchar(255), price int);");
-    connection.close()
+    implicit val session = AutoSession
+    sql"create TABLE IF NOT EXISTS books ( title varchar(255), author varchar(255), price int);".execute().apply()
   }
 
-  def insertManyRows(): Unit = {
-    val connection = DriverManager.getConnection("jdbc:h2:./books", "sa", "")
+  def insertManyRows(numberOfRowsToInsert: Integer): Unit = {
+    if (getNumberOfRows > 0) {
+      return
+    }
+
     val randomGenerator = new Random()
+    implicit val session = AutoSession
 
-
-    val query = "insert into books (title, author, price) values (?, ?, ?)"
-    val prepareStatement = connection.prepareStatement(query)
-
-    1 to 100000 foreach { _ =>
-      prepareStatement.setString(1, randomString(11))
-      prepareStatement.setString(2, randomString(11))
-      prepareStatement.setInt(3, randomGenerator.nextInt(200))
-      prepareStatement.execute()
+    1 to numberOfRowsToInsert foreach { _ =>
+      val title = randomString(11)
+      val author = randomString(11)
+      val price = randomGenerator.nextInt(200)
+      sql"insert into books (title, author, price) values ($title, $author, $price)".update.apply()
     }
 
   }
 
   @Trace(dispatcher = true)
   def dbCallInTransaction(): Unit = {
-    val connection = DriverManager.getConnection("jdbc:h2:./books", "sa", "")
-    implicit val session = AutoSession
-    val numberOfRows = sql"select count(1) from books".execute.apply()
-    println("Found ", numberOfRows, "rows")
+    val numberOfRows = getNumberOfRows
+    println(s"Found $numberOfRows rows")
   }
 
-  def randomString(length: Int) = scala.util.Random.alphanumeric.take(length).mkString
+  def getNumberOfRows: Integer = {
+    implicit val session = AutoSession
+    sql"select count(1) from books".map(rs => rs.int(1)).single().apply().get
+  }
+
+  def randomString(length: Int): String = scala.util.Random.alphanumeric.take(length).mkString
 }
 
 class Library {
