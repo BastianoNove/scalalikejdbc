@@ -1,8 +1,5 @@
-import java.sql.{Connection, DriverManager}
-import scalikejdbc._
-
-
 import com.newrelic.api.agent.Trace
+import scalikejdbc._
 
 import scala.util.Random
 
